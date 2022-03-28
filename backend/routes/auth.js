@@ -8,8 +8,10 @@ const bcrypt = require('bcrypt');
 
 const jwt = require('jsonwebtoken');
 
+const fetchUser = require('../middleware/fetchUser');
 
-// create a user using post . Doesn't require auth
+
+//ROUTE 1 : create a user using post . Doesn't require auth
 
 router.post('/createuser' ,[
     body('name','Enter a Valid name').isLength({min : 3}),
@@ -64,7 +66,7 @@ router.post('/createuser' ,[
 
 
 
-// Authenticate user . No login required
+//ROUTE 2 : Authenticate user . No login required
 
 router.post('/login',[
         body('email' , 'Enter a valid email').isEmail(),
@@ -115,6 +117,23 @@ router.post('/login',[
             res.status(500).json({error : "Internal Server error"});
         }
 })
+
+
+// ROUTE 3 : Get user details , log in required
+
+
+router.post('/getuser',fetchUser , async(req,res)=>{
+    try {
+        
+        const userId = req.user;
+        const user = await User.findById(userId).select('-password');
+        res.json(user);
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({error : "Internal Server error"});
+    }
+})
+
 
 
 module.exports = router;
