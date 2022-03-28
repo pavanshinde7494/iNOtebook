@@ -60,11 +60,61 @@ router.post('/createuser' ,[
         });
     }
 
+})  
+
+
+
+// Authenticate user . No login required
+
+router.post('/login',[
+        body('email' , 'Enter a valid email').isEmail(),
+        body('password' , 'Password must be at least 5 characters').exists()
+    ], 
+    async (req,res)=>{
+        // If there are errors return bad request
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.json({ errors: errors.array() });
+        }
+
+        const {email , password} = req.body;
+       
+        try {
+            // finding user from db 
+            let user = await User.findOne({email : email});
+            
+            
+            // user not exists
+            if(user == null){
+                res.status(400).json({error : "Please try to login in using correct email"});
+                return;
+            }
+  
+            // Comparing password given by user and present in database
+            const passwordCompare = await bcrypt.compare(password , user.password);
+
+         
+            // Wrong password
+            if(!passwordCompare){
+                res.status(400).json({error : "Please try to login in using correct password"});
+                return;
+            }
+
+
+            const data = {
+                user : user._id
+            }
+    
+            // Creating authtoken
+            const authToken = jwt.sign(data, 'secret');
+
+            res.json({authToken});   
+
+        } catch (error) {
+            console.log(error.message);
+            res.status(500).json({error : "Internal Server error"});
+        }
 })
-
-
-
-
 
 
 module.exports = router;
